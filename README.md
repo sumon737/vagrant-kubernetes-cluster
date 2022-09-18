@@ -1,115 +1,150 @@
 # vagrant-kubernetes-cluster
 #Followed this link: 
-https://www.exxactcorp.com/blog/HPC/building-a-kubernetes-cluster-using-vagrant
-Building a Kubernetes Cluster Using Vagrant
-December 11, 2019
-8 min read
-hamburg-1450152_1920.jpg
-The following tutorial is intended to explain the procedure for deploying Kubernetes using Vagrant.
-Vagrant: is a tool for building and managing virtual machine environments in a single workflow and by far the easiest and fastest way to create a virtualized environment and an effective way of deploying Kubernetes. In order for vagrant to work, you'll need a virtual machine provider such as VirtualBox, VMware, or Hyper-V. In this tutorial, we will be using VirtualBox on a Ubuntu Operating System. For documentation on how to install VirtualBox on Ubuntu stay tuned for the upcoming blog "Installing VirtualBox on Ubuntu 18.04"
+https://prog.world/how-to-set-up-a-kubernetes-cluster-on-a-vagrant-vm/
 
-Step 1) Installing Vagrant
-Vagrant must first be installed on the machine you want to run it on. To make installation easy, Vagrant is distributed as a binary package for all supported platforms and architectures. Installing Vagrant is extremely easy. Head over to the Vagrant downloads page and get the appropriate installer or package for your platform. Install the package using standard procedures for your operating system.
+How to set up a Kubernetes cluster on a Vagrant VM
+In this Kubernetes tutorial, I went through a step-by-step guide to setting up a Kubernetes cluster on Vagrant. This is a multi-node Kubernetes setup using kubeadm…
 
-After the vagrant has been installed. You can verify its installation by running the binary to show the version
+Vagrant is a great utility for setting up virtual machines on your local workstation.
 
-root@ubuntuvm01:~# ./vagrant version
-Installed Version: 2.2.6
-Latest Version: 2.2.6
- 
-You're running an up-to-date version of Vagrant!
-Step 2) Install git
-This may be necessary if it isn't already installed on your system
 
-apt-get install git -y
-Step 3) Download The Repo
-Next, you need to download the vagrant repo from BitBucket
+This tutorial is primarily about automated Kubernetes configuration using Vagrantfile and shell scripts.
 
-git clone https://exxsyseng@bitbucket.org/exxsyseng/k8s_centos.git # Centos k8s Cluster
-git clone https://exxsyseng@bitbucket.org/exxsyseng/k8s_ubuntu.git # Ubuntu k8s Cluster
-Step 4) Change into Vagrant Provisioning Directory
-Once the repo has been download, change into the vagrant provisioning directory and there you will see all the configuration files
+Automatic configuration of a Kubernetes cluster on Vagrant
+I wrote a basic Vagrantfile and scripts so that everyone can understand and make changes according to their requirements.
 
-root@ubuntuvm01:~# cd kubernetes/vagrant-provisioning
- 
-root@ubuntuvm01:~/kubernetes/vagrant-provisioning# ls -ltr
-total 24
--rw-r--r-- 1 root root 1073 Oct 29 20:48 Vagrantfile
--rw-r--r-- 1 root root 3202 Oct 29 20:48 kube-flannel.yml
--rw-r--r-- 1 root root 2394 Oct 29 20:48 bootstrap.sh
--rw-r--r-- 1 root root  337 Oct 29 20:48 bootstrap_kworker.sh
--rw-r--r-- 1 root root  726 Oct 29 20:48 bootstrap_kmaster.sh
--rw-r--r-- 1 root root  839 Oct 29 20:48 bootstrap_kmaster_calico.sh
-Vagrantfile: The primary function of the Vagrantfile is to describe the type of machine required for a project, and how to configure and provision these machines. In this file, you will have settings such as operating system type, hostnames of your VMs in the cluster, node count for a few examples. The file also specifies the bootstrap scripts.
+Configuration summary.
 
-bootstrap.sh: This file is a basic set of initial instructions that will generally be applied to both the master Kubernetes node and the worker nodes as well. It does things such as update the /etc/hosts file to include all the nodes, installs docker, disables selling, and a firewall. It also installed Kubernetes
+Team vagrant up will create three virtual machines and configure all basic kubernetes components and configuration using Kubeadm.
 
-bootstrap_kmaster.sh: This file Initialize Kubernetes, create the flannel network
+The kubeconfig file is added to all nodes in the cluster so you can run kubectl commands from any node.
 
-bootstrap_kworker: This script will join the worker nodes to the cluster
+The kubeconfig file and the kubernetes access token are added to the configs folder where you have your Vagrantfile. You can use the kubeconfig file to connect the cluster from your workstation.
 
-Almost all interaction with Vagrant is done through the command-line interface. The interface is available using the vagrant command and comes installed with Vagrant automatically. The vagrant command in turn has many subcommands.
-MicroK8s GPU Workstation | Kubernetes
+You can shutdown virtual machines when not in use and restart them when needed. All cluster configurations remain intact without any problem. Nodes are automatically connected to the master during startup.
 
-Step 5) Bringing up the Kubernetes Cluster
-To create and configure our Kubernetes cluster run the Vagrant command with the up flag. The binary will read the Vagrantfile and bring up the Kubernetes cluster.
+You can delete all virtual machines with one command vagrant destroy and recreate the installation using the command vagrant up Anytime.
 
-root@ubuntuvm01:~/kubernetes/vagrant-provisioning# vagrant up
-Bringing machine 'kmaster' up with 'virtualbox' provider...
-Bringing machine 'kworker1' up with 'virtualbox' provider...
-Bringing machine 'kworker2' up with 'virtualbox' provider...
-Step 6) Checking the Status
-Once the cluster is completed build you can check the status of there system with the status flag.
+Kubernetes, Kubeadm, Vagrant, Github Repository
+Kubeadm, Vagrantfile and scripts are located in github repos…
 
-exx@microk8s-01:~/kubernetes/vagrant-provisioning$ vagrant status
-Current machine states: 
 
-kmaster                   running (virtualbox)
-kworker1                  running (virtualbox)
-kworker2                  running (virtualbox)
-Step 7) Logging into the Head Node
-To log into the head node or any of the nodes in the cluster simply run "vagrant ssh <hostname>.
+Clone the repository.
 
-exx@microk8s-01:~/kubernetes/vagrant-provisioning$ vagrant ssh kmaster
-Last login: Wed Oct 30 00:27:31 2019
-Your Cluster is now ready to use. You can verify by running "kubectl get nodes".
+git clone https://github.com/scriptcamp/vagrant-kubeadm-kubernetes
+Configuring a Kubernetes cluster on Vagrant
+Follow the steps below to deploy a Kubernetes cluster and verify all cluster configurations.
 
-[vagrant@kmaster ~]$ kubectl get nodes
-NAME                    STATUS   ROLES    AGE    VERSION
-kmaster.example.com     Ready    master   14m    v1.16.2
-kworker1.example.com    Ready    <none>   11m    v1.16.2
-kworker2.example.com    Ready    <none>   9m8s   v1.16.2
-This variable specifies the model location based on what model is specified in the 'PARAM_SET' variable.
+Step 1: To create a cluster, go to the cloned directory.
 
-[vagrant@kmaster ~]$ kubectl get all --all-namespaces
-NAMESPACE   NAME                                             READY  STATUS RESTARTS AGE
-kube-system pod/coredns-5644d7b6d9-9b7tv                      0/1   Pending   0     14m
-kube-system pod/coredns-5644d7b6d9-c7ls2                      0/1   Pending   0     14m
-kube-system pod/etcd-kmaster.example.com                      1/1   Running   0     13m
-kube-system pod/kube-apiserver-kmaster.example.com            1/1   Running   0     13m
-kube-system pod/kube-controller-manager-kmaster.example.com   1/1   Running   0     13m
-kube-system pod/kube-proxy-2p9vh                              1/1   Running   0     9m35s
-kube-system pod/kube-proxy-hpmd5                              1/1   Running   0     11m
-kube-system pod/kube-proxy-qj8h2                              1/1   Running   0     14m
-kube-system pod/kube-scheduler-kmaster.example.com            1/1   Running   0     13m 
+cd vagrant-kubeadm-kubernetes
+Step 2: Run the vagrant command. She will expand three nodes. One master and two worker-nodes. Installing and configuring Kubernetes occurs through a bash script present in the scripts folder.
 
-NAMESPACE    NAME                TYPE        CLUSTER-IP  EXTERNAL-IP   PORT(S)                AGE
-default      service/kubernetes  ClusterIP   10.96.0.1   <none>        443/TCP                14m
-kube-system  service/kube-dns    ClusterIP   10.96.0.10   <none>       53/UDP,53/TCP,9153/TCP 14m 
+vagrant up
+Note: If this is the first time you run it, Vagrant will first download the ubuntu image mentioned in the Vagrantfile. This is a one-time download.
 
-NAMESPACE    NAME                       DESIRED CURRENT READY UP-TO-DATE AVAILABLE NODE SELECTOR AGE
-kube-system  daemonset.apps/kube-proxy  3       3       3     3          3     beta.kubernetes.io/os=linux 14m 
+Step 3: Login in master-node to check the cluster configuration.
 
-NAMESPACE    NAME                     READY UP-TO-DATE AVAILABLE AGE
-kube-system deployment.apps/coredns   0/2   2          0         14m 
+vagrant ssh master
+Step 4: List all nodes in the cluster to make sure worker-nodes are connected to master and ready.
 
-NAMESPACE    NAME                                DESIRED CURRENT READY AGE
-kube-system replicaset.apps/coredns-5644d7b6d9   2        2       0    14m
-Final Thoughts on Deploying Kubernetes using Vagrant
-If you are a developer, Vagrant will isolate dependencies and their configuration within a single disposable, consistent environment, without sacrificing any of the tools you are used to working with (editors, browsers, debuggers, etc.). Once you or someone else creates a single Vagrantfile, you just need to vargrant up and everything is installed and configured for you to work. Other members of your team create their development environments from the same configuration, so whether you are working on Linux, Mac OS X, or Windows, all your team members are running code in the same environment, against the same dependencies, all configured the same way. Say goodbye to "works on my machine" bugs.
+kubectl top nodes
+You should see what is shown below.
 
-If you are an operations engineer or DevOps engineer, Vagrant gives you a disposable environment and consistent workflow for developing and testing infrastructure management scripts. You can quickly test things like shell scripts, Chef cookbooks, Puppet modules, and more using local virtualization such as VirtualBox or VMware. Then, with the same configuration, you can test these scripts on remote clouds such as AWS or RackSpace with the same workflow. Ditch your custom scripts to recycle EC2 instances, stop juggling SSH prompts to various machines, and start using Vagrant to bring sanity to your life.
 
-If you are a designer, Vagrant will automatically set everything up that is required for that web app in order for you to focus on doing what you do best: design. Once a developer configures Vagrant, you do not need to worry about how to get that app running ever again. No more bothering other developers to help you fix your environment so you can test designs. Just check out the code, vargrant up, and start designing
+That’s all! You can start deploying and testing other applications.
 
-Either way, Vagrant is designed for everyone as the easiest and fastest way to create a virtualized environment!
+
+To shutdown the Kubernetes VMs, run the command:
+
+vagrant halt
+When you need the cluster again, just do:
+
+vagrant up
+To remove virtual machines:
+
+vagrant destroy -f
+Explanation of Kubeadm, Vagrantfile and Scripts
+The vagrant repository file tree.
+
+├── Vagrantfile
+├── configs
+│   ├── config
+│   ├── join.sh
+│   └── token
+└── scripts
+├── common.sh
+├── master.sh
+└── node.sh
+The configs folder and files are generated only after the first launch.
+
+As I explained earlier, the config folder contains a config file, a token, and a join.sh file.
+
+
+In the previous section, I already explained what config and token are. The join.sh file contains the command to join the worker-node with the token generated during the initialization of the master-node kubeadm.
+
+Since all nodes share a folder with the Vagrantfile, worker-node can read the join.sh file and automatically join master during the first startup. This is a one-time task.
+
+
+If you enter any node and access the folder /vagrant, you will see the Vagrantfile and scripts as they are shared across virtual machines.
+
+Let’s take a look at Vagrantfile
+
+Vagrant.configure("2") do |config|
+config.vm.provision "shell", inline: <<-SHELL
+apt-get update -y
+echo "10.0.0.10  master-node" >> /etc/hosts
+echo "10.0.0.11  worker-node01" >> /etc/hosts
+echo "10.0.0.12  worker-node02" >> /etc/hosts
+SHELL
+config.vm.define "master" do |master|
+  master.vm.box = "generic/ubuntu2004"
+  master.vm.hostname = "master-node"
+  master.vm.network "private_network", ip: "10.0.0.10"
+  master.vm.provider "virtualbox" do |vb|
+      vb.memory = 4048
+      vb.cpus = 2
+  end
+  master.vm.provision "shell", path: "scripts/common.sh"
+  master.vm.provision "shell", path: "scripts/master.sh"
+end
+(1..2).each do |i|
+config.vm.define "node0#{i}" do |node|
+node.vm.box = "generic/ubuntu2004"
+node.vm.hostname = "worker-node0#{i}"
+node.vm.network "private_network", ip: "10.0.0.1#{i}"
+node.vm.provider "virtualbox" do |vb|
+vb.memory = 2048
+vb.cpus = 1
+end
+node.vm.provision "shell", path: "scripts/common.sh"
+node.vm.provision "shell", path: "scripts/node.sh"
+end
+end
+end
+As you can see, I have added the following IP addresses for the nodes and it is added to the host file entry of all nodes with its hostname with a common shell block that runs on all virtual machines.
+
+10.0.0.10 (master)
+
+10.0.0.11 (node ​​01)
+
+10.0.0.12 (node ​​02)
+
+Also, the worker-node block is in a loop. Therefore, if you need more than two worker-nodes, or you only have one worker-node, you need to replace 2 with the desired number in the loop. If you are adding more nodes, make sure you add the IP to the node.
+
+For example, for 3 worker-node you need to have a loop 1..4…
+
+(1..4).each do |i|
+master.sh, node.sh and common.sh
+These three scripts are run as provisioners during Vagrant startup to configure the cluster.
+
+common.sh: – List of commands that install docker, kubeadm, kubectl and kubelet on all nodes. It also disables swap.
+
+master.sh: – contains commands for initializing master, installing calico plugin. Also copies the kube-config files, join.sh and token to the configs directory.
+
+node.sh: – reads the command join.sh from the configs shared folder and attaches to master-node. Also copied the kubeconfig file to /home/vagrant/.kube location to execute kubectl commands.
+
+Conclusion
+To set up a kubernetes cluster on Vagrant, all you need to do is clone the repository and run the vagrant up command.
+
+Also, you are a DevOps engineer and you work on a Kubernetes cluster, you can have a local development and testing stand.
